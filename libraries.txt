@@ -1,0 +1,9 @@
+# Bibliotecas para COMPASS Assistant + Firebase
+# Cole este conteúdo no arquivo libraries.txt do Wokwi
+
+ArduinoJson
+
+
+Adafruit GFX Library
+Adafruit SSD1306
+
