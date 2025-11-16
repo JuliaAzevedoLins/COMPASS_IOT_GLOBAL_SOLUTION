@@ -74,42 +74,36 @@ Uma plataforma web completa para *recrutadores e empresas* que precisam encontra
 
 ## 🔄 Como o Ecossistema se Conecta
 
+**Fluxo integrado (4 componentes em cascata):**
 
-┌─────────────────────────────────────────────────────────────────┐
-│                        CANDIDATO                                 │
-│  📱 Usa COMPASS App para desenvolver skills gamificadas         │
-│  🎮 Completa desafios, ganha badges, evolui competências        │
-│  💼 Visualiza vagas compatíveis com seu progresso atual         │
-└────────────────┬────────────────────────────────────────────────┘
-                 │
-                 │ Dados de performance
-                 ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    PLATAFORMA COMPASS                            │
-│  🗄️ Centraliza perfis + progresso + vagas                       │
-│  🤖 Algoritmo de matching inteligente                           │
-│  📊 Analytics de desenvolvimento dos candidatos                 │
-└────────────────┬────────────────────────────────────────────────┘
-                 │
-                 │ Match + Agendamento
-                 ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                      RECRUTADOR                                  │
-│  💻 Acessa Platform para descobrir talentos                     │
-│  🎯 Analisa não só skills atuais, mas trajetória de crescimento │
-│  📅 Agenda entrevistas diretamente no sistema                   │
-└────────────────┬────────────────────────────────────────────────┘
-                 │
-                 │ Sincronização HTTP/Firebase
-                 ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                  🦊 COMPASS ASSISTANT PRO                        │
-│  ⚡ Dispositivo IoT físico na mesa do recrutador                │
-│  🔔 Alertas inteligentes sobre entrevistas agendadas            │
-│  📺 Display com informações do candidato                        │
-│  🎨 LED RGB indicando urgência                                  │
-└─────────────────────────────────────────────────────────────────┘
-
+```
+📱 CANDIDATO
+├─ Usa COMPASS App para desenvolver skills gamificadas
+├─ Completa desafios, ganha badges, evolui competências
+└─ Visualiza vagas compatíveis com seu progresso atual
+        ↓
+        Dados de performance
+        ↓
+💻 PLATAFORMA COMPASS
+├─ Centraliza perfis + progresso + vagas
+├─ Algoritmo de matching inteligente
+└─ Analytics de desenvolvimento dos candidatos
+        ↓
+        Match + Agendamento
+        ↓
+👩‍💻 RECRUTADOR
+├─ Acessa Platform para descobrir talentos
+├─ Analisa não só skills atuais, mas trajetória de crescimento
+└─ Agenda entrevistas diretamente no sistema
+        ↓
+        Sincronização HTTP/Firebase
+        ↓
+🦊 COMPASS ASSISTANT PRO
+├─ Dispositivo IoT físico na mesa do recrutador
+├─ Alertas inteligentes sobre entrevistas agendadas
+├─ Display com informações do candidato
+└─ LED RGB indicando urgência
+```
 
 ---
 
@@ -146,58 +140,33 @@ No *Futuro do Trabalho*, três desafios críticos convergem:
 
 ---
 
-## 💡 A Solução: O Ecossistema COMPASS
+## 💡 A Solução: O COMPASS Assistant Pro
 
-Criamos uma *solução end-to-end* que transforma o processo de recrutamento para a era do trabalho remoto, híbrido e em constante evolução:
+O *COMPASS Assistant Pro* é o **guardian físico** da agenda do recrutador. Mesmo com a melhor plataforma de recrutamento, tudo falha se o recrutador esquecer a entrevista — por isso desenvolvemos um dispositivo IoT com feedback multissensorial integrado.
 
-### 🎮 *App COMPASS* → Desenvolve e valida skills
-- Candidatos *aprendem fazendo* através de gamificação
-- Progresso *mensurável e verificável* em tempo real
-- Criação de *portfólio digital de competências*
+### ⭐ Características Principais:
 
-### 💻 *Platform COMPASS* → Conecta talento com oportunidade
-- Recrutadores *descobrem potencial oculto* através de dados
-- Match baseado em *trajetória, não apenas status atual*
-- Gestão completa do pipeline de recrutamento em um só lugar
+✅ **Alertas Multissensoriais Graduais** (LED RGB + Buzzer)
+- Cores indicam urgência: verde → ciano → amarelo → laranja → 🔴 vermelho piscando
+- Toques sonoros diferentes por nível de prioridade
+- Display OLED com informações do candidato em tempo real
 
-### 🦊 *Assistant Pro IoT* → Garante execução perfeita
-- *Elimina falhas humanas* na gestão de agenda
-- Alertas *multissensoriais progressivos* evitam surpresas
-- Interface física traz *confiabilidade* ao processo digital
-
----
-
-## 🎯 Por que o Assistant Pro é Essencial?
-
-*O problema:* Mesmo com a melhor plataforma de recrutamento do mundo, tudo desmorona se o recrutador *esquecer a entrevista*.
-
-*Nossa solução física:*
-
-O *COMPASS Assistant Pro* é o *guardian físico* da agenda do recrutador, oferecendo:
-
-### Características Principais:
-
-✅ *Alertas Multissensoriais Graduais*
-- LED RGB com cores que indicam urgência (verde → ciano → amarelo → laranja → vermelho piscando)
-- Buzzer com toques diferentes por nível de prioridade
-- Display OLED com informações em tempo real
-
-✅ *Sincronização Automática em Tempo Real*
+✅ **Sincronização Automática em Tempo Real**
 - Comunicação HTTP com Firebase Firestore
-- Atualização automática a cada 2 minutos
-- Sem necessidade de intervenção manual
+- Atualização a cada 2 minutos (sem intervenção manual)
+- Horário sincronizado via NTP
 
-✅ *Interface Física Intuitiva*
-- 3 botões para controle direto (Snooze, Dismiss, Confirm)
+✅ **Interface Física Intuitiva**
+- 3 botões (Snooze 5min, Dismiss, Confirm)
 - Telas alternadas automaticamente (resumo ↔ detalhes)
 - Feedback imediato de todas as ações
 
-✅ *Integração Total com Plataforma Web*
-- Todas as entrevistas gerenciadas no site COMPASS
+✅ **Integração Total com Plataforma Web**
+- Todas as entrevistas gerenciadas via COMPASS Platform
 - Sincronização bidirecional de dados
 - Histórico completo disponível
 
-*Resultado:* Recrutadores focam em *analisar candidatos e tomar decisões, enquanto o dispositivo cuida da **execução operacional*.
+**Resultado:** Recrutadores focam em **analisar e decidir**, enquanto o dispositivo cuida da **execução operacional**.
 
 ---
 
@@ -236,13 +205,13 @@ O *COMPASS Assistant Pro* é o *guardian físico* da agenda do recrutador, ofere
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    COMPASS PLATFORM (Web)                    │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │  Cadastro de │  │   Análise de │  │  Agendamento │      │
+│                    COMPASS PLATFORM (Web)                   │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
+│  │  Cadastro de │  │   Análise de │  │  Agendamento │       │
 │  │  Candidatos  │─▶│     Perfil   │─▶│  Entrevistas │      │
-│  └──────────────┘  └──────────────┘  └──────┬───────┘      │
-│                                              │               │
-└──────────────────────────────────────────────┼───────────────┘
+│  └──────────────┘  └──────────────┘  └──────┬───────┘       │
+│                                              │              │
+└──────────────────────────────────────────────┼──────────────┘
                                                │
                                     ┌──────────▼──────────┐
                                     │  Firebase Firestore │
@@ -258,10 +227,10 @@ O *COMPASS Assistant Pro* é o *guardian físico* da agenda do recrutador, ofere
                                                │
                     ┌──────────────────────────┼────────────────┐
                     │                          │                │
-         ┌──────────▼─────────┐   ┌───────────▼────────┐  ┌───▼────┐
-         │  Display OLED      │   │    LED RGB         │  │ Buzzer │
-         │  (Info Visual)     │   │  (Status Cores)    │  │(Alertas)│
-         └────────────────────┘   └────────────────────┘  └────────┘
+         ┌──────────▼─────────┐   ┌───────────▼────────┐  ┌───▼────────┐
+         │  Display OLED      │   │    LED RGB         │  │   Buzzer   │
+         │  (Info Visual)     │   │  (Status Cores)    │  │ (Alertas)  │
+         └────────────────────┘   └────────────────────┘  └────────────┘
                     │
          ┌──────────▼─────────────────────┐
          │  Botões Físicos                │
@@ -299,9 +268,9 @@ O *COMPASS Assistant Pro* é o *guardian físico* da agenda do recrutador, ofere
 
 ### Diagrama Visual
 
-![Wokwi Diagram](https://wokwi.com/projects/YOUR_PROJECT_ID/diagram.svg)
+![Wokwi Diagram](/Imagens/Simulação%20Wokwi%20-%20Iniciando%20Dispositivo.png)
 
-**Link do projeto Wokwi:** [https://wokwi.com/projects/YOUR_PROJECT_ID](https://wokwi.com/projects/YOUR_PROJECT_ID)
+**Link do projeto Wokwi:** [https://wokwi.com/projects/447369330794958849](https://wokwi.com/projects/447369330794958849)
 
 ---
 
