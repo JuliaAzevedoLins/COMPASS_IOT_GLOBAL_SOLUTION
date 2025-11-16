@@ -580,7 +580,7 @@ O vídeo demonstra:
 
 ### Simulação Wokwi
 
-🔗 **Link do projeto:** [https://wokwi.com/projects/YOUR_PROJECT_ID](https://wokwi.com/projects/YOUR_PROJECT_ID)
+🔗 **Link do projeto:** [https://wokwi.com/projects/447369330794958849](https://wokwi.com/projects/447369330794958849)
 
 Para testar:
 1. Abra o link acima

@@ -1,9 +1,29 @@
 /*
-    COMPASS ASSISTANT PRO
-    Sistema IoT Completo com Feedback Visual e Sonoro
-    + LED RGB para status
-    + Buzzer para alertas
-    + Telas otimizadas para melhor legibilidade
+╔══════════════════════════════════════════════════════════════════════╗
+║                   🦊 COMPASS ASSISTANT PRO 🦊                        ║
+║                                                                      ║
+║    Sistema IoT Completo com Feedback Visual e Sonoro                ║
+║    Plataforma: ESP32 | Display: OLED SSD1306 | LED RGB + Buzzer    ║
+║                                                                      ║
+║    Global Solution 2025 - FIAP                                      ║
+║    Desenvolvido por: Julia Azevedo | Luís Barreto | Victor Hugo   ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+FUNCIONALIDADES:
+- Sincronização com Firebase Firestore (HTTP/REST)
+- Alertas multissensoriais: LED RGB + Buzzer + Display OLED
+- Escalação de urgência: Verde → Ciano → Amarelo → Laranja → Vermelho
+- Controles físicos: 3 botões (Confirm, Snooze, Dismiss)
+- Atualização automática a cada 2 minutos
+
+FLUXO PRINCIPAL:
+1. Conecta ao WiFi
+2. Sincroniza horário (NTP)
+3. Busca entrevistas do Firebase
+4. Ordena por proximidade
+5. Exibe alerta progressivo conforme se aproxima
+6. Aguarda interação do usuário (botões)
+7. Retorna ao passo 3 (a cada 2 minutos)
 */
 
 #include <WiFi.h>
@@ -15,7 +35,9 @@
 #include <Adafruit_SSD1306.h>
 #include <WiFiClientSecure.h>
 
-// ==================== CONFIG ====================
+// ══════════════════════════════════════════════════════════════════════════════
+// 🔧 CONFIGURAÇÃO: CREDENCIAIS E PINOS
+// ══════════════════════════════════════════════════════════════════════════════
 const char* FIREBASE_URL = "https://firestore.googleapis.com/v1/projects/compass-d89ed/databases/(default)/documents/interviews?key=AIzaSyBHOOLHgbOm8GcAf2_Diqw84XCgVECcdzo";
 const char* ssid = "Wokwi-GUEST";
 const char* password = "";
@@ -36,7 +58,10 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 WiFiClientSecure client;
 HTTPClient http;
 
-// ==================== ESTRUTURA DE DADOS ====================
+// ══════════════════════════════════════════════════════════════════════════════
+// 📊 ESTRUTURA DE DADOS: ENTREVISTAS E ESTADO
+// ══════════════════════════════════════════════════════════════════════════════
+// Armazena informações de cada entrevista sincronizada com Firebase
 struct Interview {
   String candidateName;
   String position;
@@ -52,7 +77,10 @@ Interview interviews[10];
 int interviewCount = 0;
 Interview* nextInterview = nullptr;
 
-// ==================== CONTROLE ====================
+// ══════════════════════════════════════════════════════════════════════════════
+// ⏱️ CONTROLE: TIMERS E DEBOUNCING
+// ══════════════════════════════════════════════════════════════════════════════
+// Gerencia intervalos de atualização, debounce de botões e alternância de telas
 unsigned long lastCheck = 0;
 const unsigned long CHECK_INTERVAL = 120000;
 unsigned long lastDebounce[3] = {0, 0, 0};
@@ -64,7 +92,16 @@ bool ledBlink = false;
 unsigned long lastBlink = 0;
 uint8_t currentLedR = 0, currentLedG = 0, currentLedB = 0;
 
-// ==================== LED RGB ====================
+// ══════════════════════════════════════════════════════════════════════════════
+// 💡 LED RGB: CONTROLE E STATUS VISUAL
+// ══════════════════════════════════════════════════════════════════════════════
+// Cores indicam urgência:
+//  🟢 Verde   = Tranquilo (sem entrevistas próximas)
+//  🔵 Ciano   = Programado (> 1 hora)
+//  🟡 Amarelo = Atenção (< 1 hora)
+//  🟠 Laranja = Alerta (< 15 min)
+//  🔴 Vermelho= Urgente (< 5 min ou AGORA)
+//  ⚡ Piscando= Em andamento (agora!)
 void setLEDRGB(uint8_t r, uint8_t g, uint8_t b) {
   // Só atualiza se mudou (evita spam no Serial)
   if (r == currentLedR && g == currentLedG && b == currentLedB) {
@@ -98,6 +135,11 @@ void setLEDRGB(uint8_t r, uint8_t g, uint8_t b) {
 }
 
 void updateLEDStatus() {
+  // 📌 DESCRIÇÃO: Atualiza LED RGB baseado na urgencia da proxima entrevista
+  // 🎨 ESQUEMA DE CORES: Verde (calmo) → Ciano (longe) → Amarelo (1h) → Laranja (15m) → Vermelho (5m) → Piscante (AGORA!)
+  // ⏰ CÁLCULO: Diferença de tempo (agora vs. dateTime da entrevista)
+  // 🔴 ESPECIAL: Piscante 500ms quando diff < 0 (entrevista em andamento/atrasada)
+  
   if (!nextInterview) {
     // Verde = Tranquilo
     setLEDRGB(0, 255, 0);
@@ -130,7 +172,10 @@ void updateLEDStatus() {
   }
 }
 
-// ==================== BUZZER ====================
+// ══════════════════════════════════════════════════════════════════════════════
+// 🔊 BUZZER: ALERTAS SONOROS
+// ══════════════════════════════════════════════════════════════════════════════
+// Sons progressivos indicam urgência (suave → moderado → urgente)
 void playTone(int freq, int duration) {
   tone(BUZZER, freq, duration);
   delay(duration);
@@ -164,7 +209,10 @@ void successSound() {
   playTone(1500, 150);
 }
 
-// ==================== FUNÇÕES AUXILIARES ====================
+// ══════════════════════════════════════════════════════════════════════════════
+// 🛠️ FUNÇÕES AUXILIARES: PARSING E FORMATAÇÃO
+// ══════════════════════════════════════════════════════════════════════════════
+// Converte timestamps Firebase, formata datas, ordena entrevistas
 time_t parseFirebaseTimestamp(const char* timestamp) {
   struct tm timeinfo = {0};
   int year, month, day, hour, minute, second;
@@ -215,6 +263,11 @@ String formatDateTime(time_t t) {
 }
 
 void sortInterviewsByProximity() {
+  // 📌 DESCRIÇÃO: Ordena entrevistas por data/hora e seleciona proxima ativa
+  // 🔍 LÓGICA: Bubble sort crescente + filtra dismissed/snoozed + seleciona primeira valida
+  // 🎯 RESULTADO: `nextInterview` apontando para proxima urgente (ou nullptr se nenhuma)
+  // ⏰ CASO DE BORDA: Respeita snooze (ignora por 5 min) e dismissals
+  
   for (int i = 0; i < interviewCount - 1; i++) {
     for (int j = 0; j < interviewCount - i - 1; j++) {
       if (interviews[j].dateTime > interviews[j + 1].dateTime) {
@@ -244,7 +297,10 @@ void sortInterviewsByProximity() {
   }
 }
 
-// ==================== DISPLAY - TELAS MÚLTIPLAS ====================
+// ══════════════════════════════════════════════════════════════════════════════
+// 📺 DISPLAY: TELAS MÚLTIPLAS (BOOT, MAIN, DETALHES, FEEDBACKS)
+// ══════════════════════════════════════════════════════════════════════════════
+// Exibe informações do candidato com alternância automática entre resumo e detalhes
 void drawCenteredText(String text, int y, int size = 1) {
   display.setTextSize(size);
   int16_t x1, y1;
@@ -279,6 +335,11 @@ void showStatus(String msg) {
 }
 
 void showMainScreen() {
+  // 📌 DESCRIÇÃO: Tela principal com resumo da proxima entrevista
+  // 📺 CONTEÚDO: Cargo + Tempo em minutos + Botoes de acao disponíveis
+  // 🎯 CASOS: Sem alerta (^_^) | Com alerta urgente (mostra timing)
+  // ⌨️  INTERAÇÃO: Dismiss (btn1) ou Snooze 5min (btn2) disponíveis
+  
   display.clearDisplay();
   display.setTextColor(SSD1306_WHITE);
   
@@ -436,7 +497,10 @@ void showConfirmed() {
   display.display();
 }
 
-// ==================== NETWORK ====================
+// ══════════════════════════════════════════════════════════════════════════════
+// 🌐 NETWORK: WIFI E FIREBASE
+// ══════════════════════════════════════════════════════════════════════════════
+// Conecta ao WiFi e sincroniza entrevistas via REST API
 void setupWiFi() {
   WiFi.begin(ssid, password);
   int attempts = 0;
@@ -448,6 +512,11 @@ void setupWiFi() {
 }
 
 void fetchInterviews() {
+  // 📌 DESCRIÇÃO: Sincroniza entrevistas via GET request na Firebase Firestore
+  // 📥 PARÂMETROS: Nenhum (usa FIREBASE_URL global)
+  // 📤 RETORNO: Popula array `interviews[10]` e atualiza `interviewCount`
+  // 🔄 PROCESSO: WiFi check → HTTP GET → Parse JSON → Sort by proximity → Update display
+  
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("\n⚠️  WiFi desconectado - Impossivel atualizar");
     return;
@@ -547,7 +616,10 @@ void fetchInterviews() {
   http.end();
 }
 
-// ==================== BUTTONS ====================
+// ══════════════════════════════════════════════════════════════════════════════
+// 🔘 BUTTONS: INTERAÇÃO COM USUÁRIO
+// ══════════════════════════════════════════════════════════════════════════════
+// Detecta pressionamentos com debouncing (200ms) e mapeia para ações
 void handleButtons() {
   // Botão DISMISS
   if (digitalRead(BTN_DISMISS) == LOW) {
@@ -606,7 +678,10 @@ void handleButtons() {
   }
 }
 
-// ==================== SETUP & LOOP ====================
+// ══════════════════════════════════════════════════════════════════════════════
+// 🚀 SETUP & LOOP: INICIALIZAÇÃO E CICLO PRINCIPAL
+// ══════════════════════════════════════════════════════════════════════════════
+// Inicializa hardware/software e executa loop principal de sincronização
 void setup() {
   delay(1000);
   Serial.begin(115200);
