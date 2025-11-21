@@ -1,10 +1,29 @@
 /*
-    COMPASS ASSISTANT PRO
-    Sistema IoT Completo com Feedback Visual e Sonoro
-    + LED RGB para status
-    + Buzzer para alertas
-    + Telas otimizadas para melhor legibilidade
-    + Atualização automática de status no Firebase
+╔══════════════════════════════════════════════════════════════════════╗
+║                   🦊 COMPASS ASSISTANT PRO 🦊                        ║
+║                                                                      ║
+║    Sistema IoT Completo com Feedback Visual e Sonoro                ║
+║    Plataforma: ESP32 | Display: OLED SSD1306 | LED RGB + Buzzer    ║
+║                                                                      ║
+║    Global Solution 2025 - FIAP                                      ║
+║    Desenvolvido por: Julia Azevedo | Luís Barreto | Victor Hugo   ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+FUNCIONALIDADES:
+- Sincronização com Firebase Firestore (HTTP/REST)
+- Alertas multissensoriais: LED RGB + Buzzer + Display OLED
+- Escalação de urgência: Verde → Ciano → Amarelo → Laranja → Vermelho
+- Controles físicos: 3 botões (Confirm, Snooze, Dismiss)
+- Atualização automática a cada 2 minutos
+
+FLUXO PRINCIPAL:
+1. Conecta ao WiFi
+2. Sincroniza horário (NTP)
+3. Busca entrevistas do Firebase
+4. Ordena por proximidade
+5. Exibe alerta progressivo conforme se aproxima
+6. Aguarda interação do usuário (botões)
+7. Retorna ao passo 3 (a cada 2 minutos)
 */
 
 #include <WiFi.h>
