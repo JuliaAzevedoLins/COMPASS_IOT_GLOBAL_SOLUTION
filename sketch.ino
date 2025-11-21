@@ -1,29 +1,10 @@
 /*
-╔══════════════════════════════════════════════════════════════════════╗
-║                   🦊 COMPASS ASSISTANT PRO 🦊                        ║
-║                                                                      ║
-║    Sistema IoT Completo com Feedback Visual e Sonoro                ║
-║    Plataforma: ESP32 | Display: OLED SSD1306 | LED RGB + Buzzer    ║
-║                                                                      ║
-║    Global Solution 2025 - FIAP                                      ║
-║    Desenvolvido por: Julia Azevedo | Luís Barreto | Victor Hugo   ║
-╚══════════════════════════════════════════════════════════════════════╝
-
-FUNCIONALIDADES:
-- Sincronização com Firebase Firestore (HTTP/REST)
-- Alertas multissensoriais: LED RGB + Buzzer + Display OLED
-- Escalação de urgência: Verde → Ciano → Amarelo → Laranja → Vermelho
-- Controles físicos: 3 botões (Confirm, Snooze, Dismiss)
-- Atualização automática a cada 2 minutos
-
-FLUXO PRINCIPAL:
-1. Conecta ao WiFi
-2. Sincroniza horário (NTP)
-3. Busca entrevistas do Firebase
-4. Ordena por proximidade
-5. Exibe alerta progressivo conforme se aproxima
-6. Aguarda interação do usuário (botões)
-7. Retorna ao passo 3 (a cada 2 minutos)
+    COMPASS ASSISTANT PRO
+    Sistema IoT Completo com Feedback Visual e Sonoro
+    + LED RGB para status
+    + Buzzer para alertas
+    + Telas otimizadas para melhor legibilidade
+    + Atualização automática de status no Firebase
 */
 
 #include <WiFi.h>
@@ -39,6 +20,8 @@ FLUXO PRINCIPAL:
 // 🔧 CONFIGURAÇÃO: CREDENCIAIS E PINOS
 // ══════════════════════════════════════════════════════════════════════════════
 const char* FIREBASE_URL = "https://firestore.googleapis.com/v1/projects/compass-d89ed/databases/(default)/documents/interviews?key=AIzaSyBHOOLHgbOm8GcAf2_Diqw84XCgVECcdzo";
+const char* FIREBASE_BASE = "https://firestore.googleapis.com/v1/projects/compass-d89ed/databases/(default)/documents/interviews/";
+const char* FIREBASE_KEY = "?updateMask.fieldPaths=status&key=AIzaSyBHOOLHgbOm8GcAf2_Diqw84XCgVECcdzo";
 const char* ssid = "Wokwi-GUEST";
 const char* password = "";
 
@@ -71,6 +54,7 @@ struct Interview {
   bool dismissed;
   bool snoozed;
   unsigned long snoozeUntil;
+  String documentId;
 };
 
 Interview interviews[10];
@@ -139,7 +123,7 @@ void updateLEDStatus() {
   // 🎨 ESQUEMA DE CORES: Verde (calmo) → Ciano (longe) → Amarelo (1h) → Laranja (15m) → Vermelho (5m) → Piscante (AGORA!)
   // ⏰ CÁLCULO: Diferença de tempo (agora vs. dateTime da entrevista)
   // 🔴 ESPECIAL: Piscante 500ms quando diff < 0 (entrevista em andamento/atrasada)
-  
+
   if (!nextInterview) {
     // Verde = Tranquilo
     setLEDRGB(0, 255, 0);
@@ -209,6 +193,58 @@ void successSound() {
   playTone(1500, 150);
 }
 
+void errorSound() {
+  playTone(400, 300);
+  delay(100);
+  playTone(300, 300);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 🛠️ FIREBASE UPDATE
+// ══════════════════════════════════════════════════════════════════════════════
+// Atualiza o status de uma entrevista específica no Firebase
+bool updateInterviewStatus(const char* documentId, const char* newStatus) {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("❌ WiFi desconectado - Impossivel atualizar status");
+    return false;
+  }
+  
+  // Monta a URL do documento específico
+  String updateUrl = String(FIREBASE_BASE) + documentId + FIREBASE_KEY;
+  
+  // JSON do body com o novo status
+  StaticJsonDocument<256> doc;
+  doc["fields"]["status"]["stringValue"] = newStatus;
+  
+  String jsonBody;
+  serializeJson(doc, jsonBody);
+  
+  Serial.println("\n🔄 Atualizando status no Firebase...");
+  Serial.printf("📝 Documento: %s\n", documentId);
+  Serial.printf("✏️  Novo status: %s\n", newStatus);
+  Serial.printf("🌐 URL: %s\n", updateUrl.c_str());
+  
+  HTTPClient httpUpdate;
+  httpUpdate.begin(client, updateUrl);
+  httpUpdate.addHeader("Content-Type", "application/json");
+  
+  int httpCode = httpUpdate.PATCH(jsonBody);
+  
+  if (httpCode == 200) {
+    Serial.println("✅ Status atualizado com sucesso no Firebase!");
+    httpUpdate.end();
+    return true;
+  } else {
+    Serial.printf("❌ Erro ao atualizar: HTTP %d\n", httpCode);
+    if (httpCode > 0) {
+      String response = httpUpdate.getString();
+      Serial.println("Resposta: " + response);
+    }
+    httpUpdate.end();
+    return false;
+  }
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // 🛠️ FUNÇÕES AUXILIARES: PARSING E FORMATAÇÃO
 // ══════════════════════════════════════════════════════════════════════════════
@@ -267,7 +303,6 @@ void sortInterviewsByProximity() {
   // 🔍 LÓGICA: Bubble sort crescente + filtra dismissed/snoozed + seleciona primeira valida
   // 🎯 RESULTADO: `nextInterview` apontando para proxima urgente (ou nullptr se nenhuma)
   // ⏰ CASO DE BORDA: Respeita snooze (ignora por 5 min) e dismissals
-  
   for (int i = 0; i < interviewCount - 1; i++) {
     for (int j = 0; j < interviewCount - i - 1; j++) {
       if (interviews[j].dateTime > interviews[j + 1].dateTime) {
@@ -339,7 +374,6 @@ void showMainScreen() {
   // 📺 CONTEÚDO: Cargo + Tempo em minutos + Botoes de acao disponíveis
   // 🎯 CASOS: Sem alerta (^_^) | Com alerta urgente (mostra timing)
   // ⌨️  INTERAÇÃO: Dismiss (btn1) ou Snooze 5min (btn2) disponíveis
-  
   display.clearDisplay();
   display.setTextColor(SSD1306_WHITE);
   
@@ -497,14 +531,27 @@ void showConfirmed() {
   display.display();
 }
 
+void showError() {
+  display.clearDisplay();
+  
+  display.setTextSize(2);
+  drawCenteredText("ERRO!", 8, 2);
+  
+  display.setTextSize(1);
+  drawCenteredText("Falha ao atualizar", 34);
+  drawCenteredText("Tente novamente", 46);
+  
+  display.display();
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // 🌐 NETWORK: WIFI E FIREBASE
 // ══════════════════════════════════════════════════════════════════════════════
 // Conecta ao WiFi e sincroniza entrevistas via REST API
 void setupWiFi() {
-  WiFi.begin(ssid, password);
+    WiFi.begin("Wokwi-GUEST", "", 6);
   int attempts = 0;
-  while (WiFi.status() != WL_CONNECTED && attempts < 30) {
+  while (WiFi.status() != WL_CONNECTED && attempts < 200) {
     delay(500);
     Serial.print(".");
     attempts++;
@@ -515,8 +562,7 @@ void fetchInterviews() {
   // 📌 DESCRIÇÃO: Sincroniza entrevistas via GET request na Firebase Firestore
   // 📥 PARÂMETROS: Nenhum (usa FIREBASE_URL global)
   // 📤 RETORNO: Popula array `interviews[10]` e atualiza `interviewCount`
-  // 🔄 PROCESSO: WiFi check → HTTP GET → Parse JSON → Sort by proximity → Update display
-  
+  // 🔄 PROCESSO: WiFi check → HTTP GET → Parse JSON → Sort by proximity → Update displa
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("\n⚠️  WiFi desconectado - Impossivel atualizar");
     return;
@@ -557,6 +603,12 @@ void fetchInterviews() {
         
         JsonObject fields = doc["fields"];
         
+        // Extrai o ID do documento do campo "name"
+        String fullPath = doc["name"].as<String>();
+        int lastSlash = fullPath.lastIndexOf('/');
+        String docId = fullPath.substring(lastSlash + 1);
+        
+        interviews[interviewCount].documentId = docId;
         interviews[interviewCount].candidateName =
           fields["candidateName"]["stringValue"].as<String>();
         interviews[interviewCount].position =
@@ -579,6 +631,7 @@ void fetchInterviews() {
         Serial.println("========================================");
         Serial.println("      🎯 PROXIMO ALERTA ATIVO");
         Serial.println("========================================");
+        Serial.printf(" 📄 ID: %s\n", nextInterview->documentId.c_str());
         Serial.printf(" 👤 Candidato: %s\n", nextInterview->candidateName.c_str());
         Serial.printf(" 💼 Cargo: %s\n", nextInterview->position.c_str());
         Serial.printf(" ⏱️  Tempo: %s\n", formatTimeUntil(nextInterview->dateTime).c_str());
@@ -621,18 +674,35 @@ void fetchInterviews() {
 // ══════════════════════════════════════════════════════════════════════════════
 // Detecta pressionamentos com debouncing (200ms) e mapeia para ações
 void handleButtons() {
-  // Botão DISMISS
+  // Botão DISMISS - Marca como CONCLUÍDO no Firebase
   if (digitalRead(BTN_DISMISS) == LOW) {
     if ((millis() - lastDebounce[0]) > debounceDelay) {
       if (nextInterview) {
         Serial.println("\n========================================");
         Serial.println("       🗑️  ALERTA DISPENSADO");
         Serial.println("========================================");
-        nextInterview->dismissed = true;
-        sortInterviewsByProximity();
-        showDismissed();
-        successSound();
-        delay(1500);
+        
+        showStatus("Atualizando...");
+        
+        // Atualiza o status no Firebase
+        bool updated = updateInterviewStatus(
+          nextInterview->documentId.c_str(), 
+          "concluido"
+        );
+        
+        if (updated) {
+          Serial.println("✅ Entrevista marcada como CONCLUIDA!");
+          nextInterview->dismissed = true;
+          sortInterviewsByProximity();
+          showDismissed();
+          successSound();
+        } else {
+          Serial.println("❌ Falha ao atualizar Firebase");
+          showError();
+          errorSound();
+        }
+        
+        delay(2000);
       }
       lastDebounce[0] = millis();
     }
@@ -694,6 +764,7 @@ void setup() {
   Serial.println("========================================");
   Serial.println("  Sistema IoT de Gestao de Entrevistas");
   Serial.println("  com Feedback Multissensorial RGB");
+  Serial.println("  + Firebase Status Update");
   Serial.println("========================================");
   Serial.println();
   Serial.println("========================================");
