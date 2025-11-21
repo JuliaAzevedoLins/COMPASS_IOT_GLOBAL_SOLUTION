@@ -25,7 +25,7 @@
 
 🔧 **[Simulação Wokwi do Projeto](https://wokwi.com/projects/447369330794958849)**
 
-🌐 **[COMPASS Platform (Site Web)](https://compass-platform.vercel.app)**
+🌐 **[COMPASS Platform (Site Web)]([https://compass-platform.vercel.app](https://compass-app-kappa.vercel.app/))**
 
 ---
 
