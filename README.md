@@ -17,6 +17,18 @@
 
 ---
 
+## 🔗 Links Principais
+
+🎥 **[Vídeo Demonstração e Explicação Técnica](https://youtu.be/LNyYRgRYlyI)**
+
+🏆 **[Pitch do Projeto para Global Solution](https://youtu.be/9UL5fSXV-Ko)**
+
+🔧 **[Simulação Wokwi do Projeto](https://wokwi.com/projects/447369330794958849)**
+
+🌐 **[COMPASS Platform (Site Web)](https://compass-platform.vercel.app)**
+
+---
+
 ## 📋 Índice
 - [Sobre o Projeto](#sobre-o-projeto)
 - [O Problema](#o-problema)
@@ -466,12 +478,18 @@ Após 5min, alerta retorna
 ```
 Pressionou DISMISS
   ↓
+Envia requisição HTTP PATCH para Firebase
+  ↓
+Marca entrevista como "completed" no banco
+  ↓
 Alerta removido permanentemente
   ↓
 Display mostra "OK!"
   ↓
 Próxima entrevista assume prioridade
 ```
+
+*💡 **Funcionalidade HTTP Bidirecional:** O botão DISMISS cumpre os requisitos de comunicação HTTP completa, pois além de extrair informações do Firebase (GET), também envia atualizações de volta (PATCH) para marcar entrevistas como concluídas.*
 
 #### 6️⃣ **Atualização Automática**
 
@@ -505,6 +523,33 @@ GET https://firestore.googleapis.com/v1/projects/{PROJECT_ID}/databases/(default
 ```
 Content-Type: application/json
 ```
+
+#### **PATCH - Marcar Entrevista como Concluída**
+
+```http
+PATCH https://firestore.googleapis.com/v1/projects/{PROJECT_ID}/databases/(default)/documents/interviews/{INTERVIEW_ID}?key={API_KEY}
+```
+
+**Headers:**
+```
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{
+  "fields": {
+    "status": {
+      "stringValue": "completed"
+    },
+    "completedAt": {
+      "timestampValue": "2024-11-13T19:55:00Z"
+    }
+  }
+}
+```
+
+*Esta requisição é enviada automaticamente quando o usuário pressiona o botão DISMISS (🔴), marcando a entrevista como concluída no Firebase e removendo o alerta do dispositivo.*
 
 **Response (200 OK):**
 ```json
@@ -568,8 +613,6 @@ String formatTimeUntil(time_t interviewTime) {
 ## 📺 Demonstração
 
 ### Vídeo Explicativo
-
-🎥 **[Assistir vídeo de demonstração (3 min)](https://youtube.com/seu-video)**
 
 O vídeo demonstra:
 1. Cadastro de entrevista na plataforma web
