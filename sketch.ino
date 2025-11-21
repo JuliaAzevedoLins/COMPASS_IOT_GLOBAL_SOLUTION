@@ -1,12 +1,12 @@
 /*
 ╔══════════════════════════════════════════════════════════════════════╗
-║                   🦊 COMPASS ASSISTANT PRO 🦊                        ║
+║                   🦊 COMPASS ASSISTANT PRO 🦊                       ║
 ║                                                                      ║
-║    Sistema IoT Completo com Feedback Visual e Sonoro                ║
-║    Plataforma: ESP32 | Display: OLED SSD1306 | LED RGB + Buzzer    ║
+║    Sistema IoT Completo com Feedback Visual e Sonoro                 ║
+║    Plataforma: ESP32 | Display: OLED SSD1306 | LED RGB + Buzzer      ║
 ║                                                                      ║
-║    Global Solution 2025 - FIAP                                      ║
-║    Desenvolvido por: Julia Azevedo | Luís Barreto | Victor Hugo   ║
+║    Global Solution 2025 - FIAP                                       ║
+║    Desenvolvido por: Julia Azevedo | Luís Barreto | Victor Hugo      ║
 ╚══════════════════════════════════════════════════════════════════════╝
 
 FUNCIONALIDADES:
